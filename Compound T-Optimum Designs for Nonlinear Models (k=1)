@@ -1,0 +1,123 @@
+rm(list=ls())
+library(mgcv)
+#-----------------------------------------------------------------------------------------------------------------------
+#                                                        starting values
+#-----------------------------------------------------------------------------------------------------------------------
+xstart1=c(0,30,0,30,15)
+xstart2=c(0,0,40,40,20)
+xstart=rbind(xstart1,xstart2)
+n=ncol(xstart)
+
+wstart=c(rep((1/n),n))
+theta1=c(10,4.36,2.58,1)
+theta2.start=c(10,4.36,5.16)
+lambda=0
+
+x1=seq(0,30,length=200)
+x2=seq(0,40,length=200)
+
+grid=expand.grid(x1,x2)
+
+max.iter=10000
+efficiency <- numeric(max.iter)
+functional <- numeric(max.iter)
+des.eff <- 0.999
+start.time <- proc.time()
+THETA.HAT=matrix(0,max.iter,3)
+num.max=numeric(max.iter)
+#-----------------------------------------------------------------------------------------------------------------------
+#                                                        THETA.HAT
+#-----------------------------------------------------------------------------------------------------------------------
+iter=0
+delta.0=0
+psi.0=1
+
+while(iter< max.iter){
+  iter=iter+1
+  plot(iter,xlim=c(iter-1,iter+1))
+  text(x=iter+1,y=iter,iter,col="red")
+  
+  
+  Tp.theta=function(par){
+    theta21=par[1]
+    theta22=par[2]
+    theta23=par[3]
+    
+    eta1=(theta1[1]*xstart[1,])/ ((theta1[2]*(1+(xstart[2,]/theta1[3]))) + xstart[1,]*(1+(((1-theta1[4])*xstart[2,])/theta1[3])))
+    eta2=(theta21*xstart[1,])/ ((theta22*(1+(xstart[2,]/theta23)))+xstart[1,]*(1+(((1-lambda)*xstart[2,])/theta23)))
+    eta3=wstart*(eta1-eta2)^2
+    
+    log(sum(eta3))
+  }
+  
+  theta2.hat=optim(par=theta2.start,Tp.theta,lower=c(0.001,0.001,0.001),upper=c(Inf,Inf,Inf),method="L-BFGS-B")$par
+  theta21.hat=theta2.hat[1]
+  theta22.hat=theta2.hat[2]
+  theta23.hat=theta2.hat[3]
+  THETA.HAT[iter,]=theta2.hat
+  
+  theta2.start=theta2.hat
+  
+  #-----------------------------------------------------------------------------------------------------------------------
+  #                                                        X.HAT
+  #-----------------------------------------------------------------------------------------------------------------------
+  
+  psi=function(xest11,xest22){
+   xest1=xest11
+    xest2=xest22
+    eta11=(theta1[1]*xest1)/ ((theta1[2]*(1+(xest2/theta1[3]))) + xest1*(1+(((1-theta1[4])*xest2)/theta1[3])))
+    eta22=(theta21.hat*xest1)/ ((theta22.hat*(1+(xest2/theta23.hat))) + xest1*(1+(((1-lambda)*xest2)/theta23.hat)))
+    eta33=(eta11-eta22)^2
+    log(eta33) 
+  }
+  psi.vec=psi(grid[,1],grid[,2])
+
+  num.max[iter]=which.max(psi.vec)
+  x.hat=c(grid[num.max[iter],1],grid[num.max[iter],2])
+  
+  xstart=cbind(xstart,x.hat)
+  alpha=1/(iter+1)
+  wstart=c(((1-alpha)*wstart),alpha)
+  design=rbind(xstart,wstart)
+  n=ncol(xstart)
+  
+DELTA=function(TETA,XXX1,XXX2,WW){
+ETA1=(theta1[1]*XXX1)/((theta1[2]*(1+(XXX2/theta1[3])))+(XXX1*(1+((XXX2*(1-theta1[4]))/theta1[3]))))
+ETA2=(TETA[1]*XXX1)/((TETA[2]*(1+(XXX2/TETA[3])))+XXX1)
+sum(WW*((ETA1-ETA2)^2))
+}
+
+efficiency[iter]=DELTA(theta2.hat,xstart[1,],xstart[2,],wstart)/max(psi.vec)
+#if(efficiency[iter]>=0.999)break
+
+}
+design1.uniq=uniquecombs(t(design[-3,]))
+count1=attr(design1.uniq,"index")
+count2=unique(sort(count1))
+#-----------------------------------------------------------------------------------------------
+weight=numeric(nrow(design1.uniq))
+for(j in 1:length(count2)){
+m=which(count1==count2[j])
+weight[j]=sum(t(design)[m,3])
+}
+#-----------------------------------------------------------------------------------------------
+design.opt=cbind(design1.uniq,weight)
+design.opt
+#-----------------------------------------------------------------------------------------------
+
+mm=which(design.opt[,3]>0.01)
+
+#-----------------------------------------------------------------------------------------------
+
+theta2.hat2=c(mean(THETA.HAT[,1]),mean(THETA.HAT[,2]),mean(THETA.HAT[,3]))
+#-----------------------------------------------------------------------------------------------
+
+DELTA.NAHAEI1=DELTA(theta2.hat2,design.opt[mm,1],design.opt[mm,2],design.opt[mm,3])
+
+#-----------------------------------------------------------------------------------------------
+design.opt[mm,]
+sum(design.opt[mm,3])
+DELTA.NAHAEI1
+
+
+

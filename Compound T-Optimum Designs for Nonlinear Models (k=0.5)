@@ -4,21 +4,17 @@ library(mgcv)
 #                                                        starting values
 #-----------------------------------------------------------------------------------------------------------------------
 par(mfrow=c(1,1))
-
 xstart1=c(0,30,0,30,15)
 xstart2=c(0,0,60,60,30)
 xstart=rbind(xstart1,xstart2)
 n=ncol(xstart)
-
 wstart=c(rep((1/n),n))
 theta1nc=c(8.6957,8.0664,12.0566,0) #kappa=0, non-compat fixed
 theta2.startc=c(7.2976,4.3860,2.5821)
 lambdac=1   # lambdac=1, comp fitted
-
 theta1c=c(7.2976,4.3860,2.5821,1) #kappa=1, compat fixed
 theta2.startnc=c(8.6957,8.0664,12.0566)
 lambdanc=0   # lambdanc=0, non-comp fitted
-
 
 x1=seq(0,30,length=225)
 x2=x2=seq(0,60,length=270)
@@ -147,11 +143,8 @@ for(j in 1:length(count2)){
 design.opt=cbind(design1.uniq,weight)
 design.opt
 #-----------------------------------------------------------------------------------------------
-
 mm=which(design.opt[,3]>0.01)
-
 #-----------------------------------------------------------------------------------------------
-
 #theta2.hat2=c(mean(THETA.HAT[,1]),mean(THETA.HAT[,2]),mean(THETA.HAT[,3]))
 #-----------------------------------------------------------------------------------------------
 

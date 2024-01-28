@@ -89,7 +89,6 @@ sum(WW*((ETA1-ETA2)^2))
 
 efficiency[iter]=DELTA(theta2.hat,xstart[1,],xstart[2,],wstart)/max(psi.vec)
 #if(efficiency[iter]>=0.999)break
-
 }
 design1.uniq=uniquecombs(t(design[-3,]))
 count1=attr(design1.uniq,"index")
@@ -104,9 +103,7 @@ weight[j]=sum(t(design)[m,3])
 design.opt=cbind(design1.uniq,weight)
 design.opt
 #-----------------------------------------------------------------------------------------------
-
 mm=which(design.opt[,3]>0.01)
-
 #-----------------------------------------------------------------------------------------------
 
 theta2.hat2=c(mean(THETA.HAT[,1]),mean(THETA.HAT[,2]),mean(THETA.HAT[,3]))
